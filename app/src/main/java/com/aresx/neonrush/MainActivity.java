@@ -168,8 +168,9 @@ public final class MainActivity extends Activity {
             return true;
         }
 
-        private final class Renderer implements GLSurfaceView.Renderer {
+        private static final class Renderer implements GLSurfaceView.Renderer {
             @Override public void onSurfaceCreated(
+                    javax.microedition.khronos.opengles.GL10 gl,
                     javax.microedition.khronos.egl.EGLConfig config) {
                 nativeInit();
             }
