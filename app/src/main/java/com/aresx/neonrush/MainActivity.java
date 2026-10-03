@@ -19,18 +19,28 @@ public final class MainActivity extends Activity {
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     private final Runnable uiUpdater = new Runnable() {
-        @Override public void run() {
+        @Override
+        public void run() {
             if (surface != null) {
-                scoreView.setText(String.format("SCORE %06d", surface.getScore()));
-                healthView.setText(String.format("HP %03d", surface.getHealth()));
+                scoreView.setText(
+                        String.format("SCORE %06d", surface.getScore())
+                );
+
+                healthView.setText(
+                        String.format("HP %03d", surface.getHealth())
+                );
+
                 if (surface.isGameOver()) {
-                    statusView.setText("SYSTEM FAILURE\nTAP ANYWHERE TO RESTART");
+                    statusView.setText(
+                            "SYSTEM FAILURE\nTAP ANYWHERE TO RESTART"
+                    );
                     statusView.setVisibility(TextView.VISIBLE);
                 } else {
                     statusView.setText("");
                     statusView.setVisibility(TextView.GONE);
                 }
             }
+
             uiHandler.postDelayed(this, 80);
         }
     };
@@ -46,82 +56,148 @@ public final class MainActivity extends Activity {
 
         FrameLayout root = new FrameLayout(this);
 
-        surface = new NeonSurface();
-        root.addView(surface, new FrameLayout.LayoutParams(-1, -1));
+        surface = new NeonSurface(this);
+
+        root.addView(
+                surface,
+                new FrameLayout.LayoutParams(-1, -1)
+        );
 
         scoreView = hudText(22f);
         scoreView.setText("SCORE 000000");
-        FrameLayout.LayoutParams scoreLp = new FrameLayout.LayoutParams(-2, -2);
+
+        FrameLayout.LayoutParams scoreLp =
+                new FrameLayout.LayoutParams(-2, -2);
+
         scoreLp.leftMargin = 30;
         scoreLp.topMargin = 20;
+
         root.addView(scoreView, scoreLp);
 
         healthView = hudText(18f);
         healthView.setText("HP 100");
-        FrameLayout.LayoutParams healthLp = new FrameLayout.LayoutParams(-2, -2);
+
+        FrameLayout.LayoutParams healthLp =
+                new FrameLayout.LayoutParams(-2, -2);
+
         healthLp.leftMargin = 30;
         healthLp.topMargin = 58;
+
         root.addView(healthView, healthLp);
 
         TextView hintView = new TextView(this);
+
         hintView.setTextColor(Color.LTGRAY);
         hintView.setTextSize(12f);
-        hintView.setText("LEFT: MOVE     RIGHT: FIRE\nHITS DAMAGE ENEMIES     CONTACT DAMAGES YOU");
-        FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(-2, -2);
+
+        hintView.setText(
+                "LEFT: MOVE     RIGHT: FIRE\n" +
+                "HITS DAMAGE ENEMIES     CONTACT DAMAGES YOU"
+        );
+
+        FrameLayout.LayoutParams hintLp =
+                new FrameLayout.LayoutParams(-2, -2);
+
         hintLp.leftMargin = 30;
         hintLp.topMargin = 86;
+
         root.addView(hintView, hintLp);
 
         statusView = hudText(24f);
         statusView.setTextColor(Color.WHITE);
         statusView.setGravity(android.view.Gravity.CENTER);
-        statusView.setText("SYSTEM FAILURE\nTAP ANYWHERE TO RESTART");
+
+        statusView.setText(
+                "SYSTEM FAILURE\nTAP ANYWHERE TO RESTART"
+        );
+
         statusView.setVisibility(TextView.GONE);
-        FrameLayout.LayoutParams statusLp = new FrameLayout.LayoutParams(-2, -2);
+
+        FrameLayout.LayoutParams statusLp =
+                new FrameLayout.LayoutParams(-2, -2);
+
         statusLp.gravity = android.view.Gravity.CENTER;
+
         root.addView(statusView, statusLp);
 
         setContentView(root);
+
         uiHandler.post(uiUpdater);
     }
 
     private TextView hudText(float size) {
         TextView tv = new TextView(this);
+
         tv.setTextColor(Color.WHITE);
         tv.setTextSize(size);
         tv.setTypeface(Typeface.DEFAULT_BOLD);
-        tv.setShadowLayer(10f, 0f, 0f, Color.CYAN);
+
+        tv.setShadowLayer(
+                10f,
+                0f,
+                0f,
+                Color.CYAN
+        );
+
         return tv;
     }
 
     @Override
     protected void onPause() {
-        if (surface != null) surface.onPause();
+        if (surface != null) {
+            surface.onPause();
+        }
+
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (surface != null) surface.onResume();
+
+        if (surface != null) {
+            surface.onResume();
+        }
     }
 
     @Override
     protected void onDestroy() {
         uiHandler.removeCallbacks(uiUpdater);
-        if (surface != null) surface.releaseNative();
+
+        if (surface != null) {
+            surface.releaseNative();
+        }
+
         super.onDestroy();
     }
 
-    private final class NeonSurface extends GLSurfaceView {
+    /*
+     * IMPORTANT:
+     *
+     * NeonSurface is static because the JNI methods below are static.
+     * This also keeps the JNI class name:
+     *
+     * MainActivity$NeonSurface
+     *
+     * which matches native-lib.cpp.
+     */
+    private static final class NeonSurface extends GLSurfaceView {
+
         private final Renderer renderer;
 
-        NeonSurface() {
-            super(MainActivity.this);
+        NeonSurface(android.content.Context context) {
+            super(context);
+
             setEGLContextClientVersion(2);
+
             renderer = new Renderer();
+
             setRenderer(renderer);
-            setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+
+            setRenderMode(
+                    GLSurfaceView.RENDERMODE_CONTINUOUSLY
+            );
+
             setFocusable(true);
             requestFocus();
         }
@@ -139,59 +215,135 @@ public final class MainActivity extends Activity {
         }
 
         void releaseNative() {
-            queueEvent(NeonSurface::nativeShutdown);
+            queueEvent(
+                    NeonSurface::nativeShutdown
+            );
         }
 
         @Override
         public boolean onTouchEvent(MotionEvent event) {
-            final int action = event.getActionMasked();
-            final int pointerIndex = event.getActionIndex();
-            final int width = getWidth();
-            final int height = getHeight();
+
+            final int action =
+                    event.getActionMasked();
+
+            final int pointerIndex =
+                    event.getActionIndex();
+
+            final int width =
+                    getWidth();
+
+            final int height =
+                    getHeight();
 
             if (action == MotionEvent.ACTION_MOVE) {
-                // ACTION_MOVE may contain multiple pointers. Forward all of them
-                // so the native game can keep movement and fire held at once.
-                final int count = event.getPointerCount();
+
+                final int count =
+                        event.getPointerCount();
+
                 for (int i = 0; i < count; i++) {
-                    final int pointerId = event.getPointerId(i);
-                    final float x = event.getX(i);
-                    final float y = event.getY(i);
-                    queueEvent(() -> nativeTouch(action, x, y, width, height, pointerId));
+
+                    final int pointerId =
+                            event.getPointerId(i);
+
+                    final float x =
+                            event.getX(i);
+
+                    final float y =
+                            event.getY(i);
+
+                    queueEvent(() ->
+                            nativeTouch(
+                                    action,
+                                    x,
+                                    y,
+                                    width,
+                                    height,
+                                    pointerId
+                            )
+                    );
                 }
+
             } else {
-                final int pointerId = event.getPointerId(pointerIndex);
-                final float x = event.getX(pointerIndex);
-                final float y = event.getY(pointerIndex);
-                queueEvent(() -> nativeTouch(action, x, y, width, height, pointerId));
+
+                final int pointerId =
+                        event.getPointerId(pointerIndex);
+
+                final float x =
+                        event.getX(pointerIndex);
+
+                final float y =
+                        event.getY(pointerIndex);
+
+                queueEvent(() ->
+                        nativeTouch(
+                                action,
+                                x,
+                                y,
+                                width,
+                                height,
+                                pointerId
+                        )
+                );
             }
+
             return true;
         }
 
-        private static final class Renderer implements GLSurfaceView.Renderer {
-            @Override public void onSurfaceCreated(
+        /*
+         * GLSurfaceView.Renderer requires the exact signatures below.
+         */
+        private static final class Renderer
+                implements GLSurfaceView.Renderer {
+
+            @Override
+            public void onSurfaceCreated(
                     javax.microedition.khronos.opengles.GL10 gl,
                     javax.microedition.khronos.egl.EGLConfig config) {
+
                 nativeInit();
             }
 
-            @Override public void onSurfaceChanged(int width, int height) {
+            @Override
+            public void onSurfaceChanged(
+                    javax.microedition.khronos.opengles.GL10 gl,
+                    int width,
+                    int height) {
+
                 nativeResize(width, height);
             }
 
-            @Override public void onDrawFrame(
+            @Override
+            public void onDrawFrame(
                     javax.microedition.khronos.opengles.GL10 gl) {
+
                 nativeStep();
             }
         }
 
         private static native void nativeInit();
+
         private static native void nativeShutdown();
-        private static native void nativeResize(int width, int height);
+
+        private static native void nativeResize(
+                int width,
+                int height
+        );
+
         private static native void nativeStep();
-        private static native void nativeTouch(int action, float x, float y, int width, int height, int pointerId);
+
+        private static native void nativeTouch(
+                int action,
+                float x,
+                float y,
+                int width,
+                int height,
+                int pointerId
+        );
+
         private static native int nativeGetScore();
+
         private static native int nativeGetHealth();
+
         private static native boolean nativeIsGameOver();
     }
 
