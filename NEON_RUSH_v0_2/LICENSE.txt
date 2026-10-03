@@ -1,0 +1,2 @@
+NEON RUSH source code — prototype provided for the project owner.
+No third-party game assets are included.
